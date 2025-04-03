@@ -67,16 +67,48 @@ app.post('/api/register', async (req, res) => {
 });
 
 
-app.get('/api/products', async (req, res) => {
-    const { reference, name, price, description, check, type, img } = req.body;
+app.post('/api/products', async (req, res) => {
+    const { reference, name, price, description, type} = req.body;
+
+    console.log("body",req.body);
     try {
-        const [rows] = await pool.query ('INSERT INTO products (reference, name, price, description, check, type, img) VALUES (?, ?, ?, ?, ?, ?, ?)', [reference, name, price, description, check, type, img]);
+        const [rows] = await pool.query ('INSERT INTO productos (numero_referencia, categoria, nombre_producto, stock, precio, descripcion) VALUES (?, ?, ?, ?, ?, ?)', [reference, type, name, 20, price, description]);
+        console.log("rows",rows);
         res.json({ mensaje: 'Producto agregado exitosamente', producto: rows });
     }
     catch (error) {
+        console.error('Error al agregar el producto:', error);
         res.status(500).json({ mensaje: 'Error al agregar el producto', error });
     }
 })
+
+app.get('/api/products', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM productos');
+        res.json(rows);
+    } catch (error) {
+        console.error('Error al obtener los productos:', error);
+        res.status(500).json({ mensaje: 'Error al obtener los productos', error });
+    }
+});
+
+app.delete('/api/products/:reference', async (req, res) => {
+    const { reference } = req.params;
+
+    try {
+        const [result] = await pool.query('DELETE FROM productos WHERE numero_referencia = ?', [reference]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ mensaje: 'Producto no encontrado' });
+        }
+
+        res.json({ mensaje: 'Producto eliminado exitosamente' });
+    } catch (error) {
+        console.error('Error al eliminar el producto:', error);
+        res.status(500).json({ mensaje: 'Error al eliminar el producto', error });
+    }
+}
+);
 
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);
